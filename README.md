@@ -14,16 +14,14 @@ O **EasyMovieTrack** é uma aplicação mobile completa para amantes do cinema g
 
 <p align="center">
   <!-- Imagem 1: Tela de Login e Cadastro -->
-  <img src="https://media3.giphy.com/media/v1.Y2lkPTc5MGI3NjExOW44eWFxYjg0OTB5M2hxN2o5enhnaG4xbzdib2VqdG9zemdkNGZwYyZlcD12MV9pbnRlcm5hbF9naWZfYnlfaWQmY3Q9Zw/2K42MCQORfL7ESe5hI/giphy.gif" width="250" alt="Login e Cadastro" style="margin: 10px;"/>
+  <img src="assets/screenshots/Login_Cadastro.gif" width="250" alt="Login e Cadastro" style="margin: 10px;"/>
   
   <!-- Imagem 2: Tela de Catálogo (API TMDB) -->
-  <img src="https://via.placeholder.com/250x500?text=Catálogo+de+Filmes" width="250" alt="Catálogo de Filmes" style="margin: 10px;"/>
+  <img src="assets/screenshots/Catalogo.gif" width="250" alt="Catálogo de Filmes" style="margin: 10px;"/>
   
   <!-- Imagem 3: Tela do Mural (Fórum) -->
-  <img src="https://via.placeholder.com/250x500?text=Mural+da+Comunidade" width="250" alt="Mural da Comunidade" style="margin: 10px;"/>
+  <img src="assets/screenshots/Mural.gif" width="250" alt="Mural da Comunidade" style="margin: 10px;"/>
 </p>
-
-> 💡 **Dica:** Para criar os GIFs acima, você pode gravar a tela do seu celular ou emulador e usar ferramentas gratuitas como o GIPHY ou Ezgif para converter em `.gif`. Depois, crie uma pasta `assets/screenshots` no projeto e coloque as imagens lá.
 
 ---
 
@@ -141,7 +139,7 @@ Pressione i para abrir no simulador iOS.
 Leia o QR Code exibido no terminal utilizando o aplicativo Expo Go em seu dispositivo físico.
 
 
-* **Nota:** Para testar as requisições à API e sincronização nativa via Expo Go no celular físico, certifique-se de que o computador de desenvolvimento e o smartphone estejam conectados exatamente à mesma rede Wi-Fi.
+> **Nota:** Para testar as requisições à API e sincronização nativa via Expo Go no celular físico, certifique-se de que o computador de desenvolvimento e o smartphone estejam conectados exatamente à mesma rede Wi-Fi.
 
 ---
 
@@ -151,6 +149,6 @@ Desenvolvido por Wendel Ferreira Santos
 
 Entre em contato ou confira mais projetos:
 
-GitHub: @WendelFeSa
+- GitHub: @WendelFeSa
 
-[LinkedIn:](www.linkedin.com/in/wendelf-santos)
+- LinkedIn: www.linkedin.com/in/wendelf-santos
