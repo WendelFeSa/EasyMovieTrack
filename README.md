@@ -10,7 +10,7 @@ O **EasyMovieTrack** é uma aplicação mobile completa para amantes do cinema g
 
 ## ▶️ Demonstração
 
-*(Abaixo você pode ver o app rodando. Você pode substituir esses placeholders por GIFs ou imagens reais do seu app).*
+*(Abaixo você pode ver o app rodando.).*
 
 <p align="center">
   <!-- Imagem 1: Tela de Login e Cadastro -->
