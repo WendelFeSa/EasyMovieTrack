@@ -3,11 +3,27 @@
 [![React Native](https://img.shields.io/badge/React_Native-20232A?style=for-the-badge&logo=react&logoColor=61DAFB)](https://reactnative.dev/)
 [![Expo](https://img.shields.io/badge/Expo-000000?style=for-the-badge&logo=expo&logoColor=white)](https://expo.dev/)
 [![SQLite](https://img.shields.io/badge/SQLite-07405E?style=for-the-badge&logo=sqlite&logoColor=white)](https://www.sqlite.org/)
-[![TMDB API](https://img.shields.io/badge/TMDB_API-01b4e4?style=for-the-badge&logo=themoviedatabase&logoColor=white)](https://www.themoviedatabase.org/)
 
 O **EasyMovieTrack** é uma aplicação mobile completa para amantes do cinema gerenciarem suas listas de filmes assistidos, descobrirem novos títulos em alta e participarem de discussões em comunidade. 
 
-O aplicativo foi desenvolvido focando em **arquitetura limpa**, **persistência de dados offline-first** e **experiência do usuário (UX/UI)** moderna e responsiva.
+---
+
+## ▶️ Demonstração
+
+*(Abaixo você pode ver o app rodando. Você pode substituir esses placeholders por GIFs ou imagens reais do seu app).*
+
+<p align="center">
+  <!-- Imagem 1: Tela de Login e Cadastro -->
+  <img src="https://media3.giphy.com/media/v1.Y2lkPTc5MGI3NjExOW44eWFxYjg0OTB5M2hxN2o5enhnaG4xbzdib2VqdG9zemdkNGZwYyZlcD12MV9pbnRlcm5hbF9naWZfYnlfaWQmY3Q9Zw/2K42MCQORfL7ESe5hI/giphy.gif" width="250" alt="Login e Cadastro" style="margin: 10px;"/>
+  
+  <!-- Imagem 2: Tela de Catálogo (API TMDB) -->
+  <img src="https://via.placeholder.com/250x500?text=Catálogo+de+Filmes" width="250" alt="Catálogo de Filmes" style="margin: 10px;"/>
+  
+  <!-- Imagem 3: Tela do Mural (Fórum) -->
+  <img src="https://via.placeholder.com/250x500?text=Mural+da+Comunidade" width="250" alt="Mural da Comunidade" style="margin: 10px;"/>
+</p>
+
+> 💡 **Dica:** Para criar os GIFs acima, você pode gravar a tela do seu celular ou emulador e usar ferramentas gratuitas como o GIPHY ou Ezgif para converter em `.gif`. Depois, crie uma pasta `assets/screenshots` no projeto e coloque as imagens lá.
 
 ---
 
@@ -15,7 +31,6 @@ O aplicativo foi desenvolvido focando em **arquitetura limpa**, **persistência 
 
 - **🔐 Autenticação Segura:** Sistema de cadastro e login com senhas criptografadas em hash SHA-256 no banco local.
 - **🎬 Catálogo Inteligente:** Integração em tempo real com a API do TMDB para busca de filmes, detalhes, elenco e sinopses.
-- **🌐 Fallback de Tradução:** Mecanismo automático para exibição de conteúdos em português com fallback em inglês quando indisponível.
 - **✅ Controle de Filmes Assistidos:** Marcação e gerenciamento de status de filmes com persistência local instantânea.
 - **💬 Mural da Comunidade:** Sistema de fórum/discussão para filmes com suporte a respostas e threads aninhadas.
 - **💾 Cache & Persistência Offline:** Banco de dados SQLite local garantindo navegação rápida e histórico sempre disponível.
@@ -27,9 +42,18 @@ O aplicativo foi desenvolvido focando em **arquitetura limpa**, **persistência 
 - **Framework:** [React Native](https://reactnative.dev/) com [Expo (SDK 51)](https://expo.dev/)
 - **Roteamento:** [Expo Router](https://docs.expo.dev/router/introduction/) (File-based routing)
 - **Banco de Dados Local:** [Expo SQLite](https://docs.expo.dev/versions/latest/sdk/sqlite/)
-- **Consumo de API:** [Axios](https://axios-http.com/)
 - **Criptografia:** Expo Crypto (SHA-256)
-- **Estilização:** StyleSheet nativo do React Native com Design System centralizado
+- **Estilização:** StyleSheet nativo (Flexbox)
+
+---
+
+## 🗺️ Roadmap / Próximos Passos
+
+Esta aplicação está em constante evolução. Os próximos grandes objetivos do projeto são:
+
+1. **🖥️ Suporte Completo para Web (PWA):** Adaptar a aplicação para rodar no navegador, garantindo compatibilidade multiplataforma.
+2. **📱 Layout Responsivo:** Implementar técnicas de design responsivo para que a interface se adapte perfeitamente a tablets e desktops.
+3. **🌐 Banco de Dados em Nuvem (Sync):** Migrar de SQLite puro para uma solução híbrida ou sincronizada (ex: Firebase/Supabase) para permitir que o usuário acesse seus dados de qualquer dispositivo.
 
 ---
 
@@ -39,13 +63,6 @@ O aplicativo foi desenvolvido focando em **arquitetura limpa**, **persistência 
 - Node.js (versão 18 ou superior)
 - Aplicativo **Expo Go** instalado no celular (ou um emulador Android/iOS)
 - Chave/Token de Leitura da API do [TMDB](https://www.themoviedatabase.org/documentation/api)
-
-### Passo a Passo
-
-1. **Clone o repositório:**
-   ```bash
-   git clone [https://github.com/WendelFeSa/EasyMovieTrack.git](https://github.com/WendelFeSa/EasyMovieTrack.git)
-   cd EasyMovieTrack
 
 ---
 
@@ -85,7 +102,7 @@ EasyMovieTrack/
 
 ---
 
-## 📦 Get started
+## 📦 Passo a Passo
 
 Siga os passos abaixo para configurar o ambiente e executar o projeto localmente:
 
@@ -130,8 +147,10 @@ Leia o QR Code exibido no terminal utilizando o aplicativo Expo Go em seu dispos
 
 ## 👤Desenvolvedor
 
-- Desenvolvido por Wendel Ferreira Santos
+Desenvolvido por Wendel Ferreira Santos
 
-- **Entre em contato ou confira mais projetos:**
+Entre em contato ou confira mais projetos:
 
 GitHub: @WendelFeSa
+
+[LinkedIn:](www.linkedin.com/in/wendelf-santos)
