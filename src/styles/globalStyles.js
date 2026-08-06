@@ -72,7 +72,7 @@ export const globalStyles = StyleSheet.create({
     height: '100%' 
   },
 
-  // CHIPS DE GÊNERO / FILTROS RAPIDOS
+  // CHIPS DE GÊNERO / FILTROS RÁPIDOS
   genreWrapper: { 
     width: '100%', 
     marginBottom: 20 
@@ -96,7 +96,7 @@ export const globalStyles = StyleSheet.create({
     fontSize: 13 
   },
 
-  //  BUTTONS
+  // BUTTONS
   buttonPrimary: {
     backgroundColor: Theme.colors.primary,
     padding: 15,
@@ -120,26 +120,26 @@ export const globalStyles = StyleSheet.create({
     marginTop: 15,
   },
 
-  // CARDS VERTICAIS DE FILME (Catálogo principal e futuro Histórico)
+  // CARDS VERTICAIS DE FILME (Catálogo principal)
   movieCard: { 
     width: '100%', 
     backgroundColor: Theme.colors.surface, 
     borderRadius: Theme.radius.md, 
     flexDirection: 'row', 
-    padding: 15, 
-    marginBottom: 20, 
+    padding: 12, 
+    marginBottom: 16, 
     borderWidth: 1, 
     borderColor: '#2D333B' 
   },
   posterImage: { 
-    width: 80, 
-    height: 120, 
+    width: 85, 
+    height: 125, 
     borderRadius: Theme.radius.md, 
     backgroundColor: '#0A0A0B' 
   },
   posterPlaceholder: { 
-    width: 80, 
-    height: 120, 
+    width: 85, 
+    height: 125, 
     backgroundColor: '#0A0A0B', 
     borderRadius: Theme.radius.md, 
     justifyContent: 'center', 
@@ -169,7 +169,7 @@ export const globalStyles = StyleSheet.create({
     lineHeight: 16 
   },
 
-  // INTERAÇÃO DE FILMES (HU 7 - Botão Assistido / Olho)
+  // INTERAÇÃO DE FILMES
   actionButton: {
     padding: 6,
     borderRadius: 8,
@@ -198,13 +198,13 @@ export const globalStyles = StyleSheet.create({
     paddingRight: 20 
   },
   miniCard: { 
-    width: 100, 
+    width: 105, 
     marginRight: 14, 
     alignItems: 'flex-start' 
   },
   miniPoster: { 
-    width: 100, 
-    height: 145, 
+    width: 105, 
+    height: 155, 
     borderRadius: Theme.radius.md, 
     backgroundColor: '#0A0A0B' 
   },
@@ -457,9 +457,9 @@ export const globalStyles = StyleSheet.create({
     marginBottom: 20,
   },
   movieHeaderPoster: {
-    width: 100,
-    height: 145,
-    borderRadius: 6,
+    width: 105,
+    height: 155,
+    borderRadius: 8,
     borderWidth: 1,
     borderColor: '#2D333B',
   },
@@ -533,6 +533,8 @@ export const globalStyles = StyleSheet.create({
     fontWeight: 'bold',
     color: Theme.colors.primary,
   },
+
+  // ✨ ELENCO DO FILME: Retangular em formato de Poster/Cartão de Ator
   castWrapper: {
     marginBottom: 25,
   },
@@ -545,16 +547,18 @@ export const globalStyles = StyleSheet.create({
     alignItems: 'center',
   },
   castActorImage: {
-    width: 70,
-    height: 70,
-    borderRadius: 35,
+    width: 80,
+    height: 115,
+    borderRadius: 8,
     marginBottom: 6,
     backgroundColor: '#30363D',
+    borderWidth: 1,
+    borderColor: '#2D333B',
   },
   castActorPlaceholder: {
-    width: 70,
-    height: 70,
-    borderRadius: 35,
+    width: 80,
+    height: 115,
+    borderRadius: 8,
     marginBottom: 6,
     backgroundColor: '#21262D',
     justifyContent: 'center',
@@ -691,12 +695,10 @@ export const globalStyles = StyleSheet.create({
     paddingHorizontal: 5,
     paddingVertical: 2,
     borderRadius: 4,
-    shrink: 0,
   },
   commentControlsRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    shrink: 0,
     gap: 8,
   },
   commentStarsRow: {
@@ -783,7 +785,6 @@ export const globalStyles = StyleSheet.create({
   replyDateText: {
     color: Theme.colors.textSecondary,
     fontSize: 10,
-    shrink: 0,
   },
   replyActionTouch: {
     padding: 2,
@@ -793,5 +794,44 @@ export const globalStyles = StyleSheet.create({
     fontSize: 13,
     lineHeight: 18,
     flexWrap: 'wrap',
+  },
+
+  // ✨ FOTO DE PERFIL DO ATOR: Retangular e proporcional em destaque
+  actorHeaderContainer: {
+    alignItems: 'center',
+    marginBottom: 25,
+    width: '100%',
+  },
+  actorProfileImage: {
+    width: 140,
+    height: 200,
+    borderRadius: 12,
+    marginBottom: 15,
+    borderWidth: 2,
+    borderColor: Theme.colors.primary,
+    backgroundColor: '#161B22',
+  },
+  actorProfilePlaceholder: {
+    width: 140,
+    height: 200,
+    borderRadius: 12,
+    backgroundColor: '#161B22',
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginBottom: 15,
+    borderWidth: 2,
+    borderColor: Theme.colors.primary,
+  },
+  actorBiographyText: {
+    color: Theme.colors.textSecondary,
+    fontSize: 13,
+    textAlign: 'justify',
+    lineHeight: 20,
+    marginBottom: 20,
+    paddingHorizontal: 10,
+  },
+  gridTwoColumnsContainer: {
+    justifyContent: 'space-between',
+    paddingBottom: 30,
   },
 });

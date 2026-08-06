@@ -2,7 +2,7 @@ import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { Stack, useLocalSearchParams, useRouter } from 'expo-router';
 import { useSQLiteContext } from 'expo-sqlite';
 import { useEffect, useState } from 'react';
-import { ActivityIndicator, Alert, Image, ScrollView, Text, TextInput, TouchableOpacity, View } from 'react-native';
+import { ActivityIndicator, Alert, Image, Modal, ScrollView, Text, TextInput, TouchableOpacity, View } from 'react-native';
 import { Theme } from '../../constants/theme';
 import api, { getMovieDetailsOnline } from '../../src/services/api';
 import { AuthSession } from '../../src/services/authSession';
@@ -16,7 +16,7 @@ export default function MovieDetails() {
 
   const [movie, setMovie] = useState(null);
   const [loading, setLoading] = useState(true);
-  const [user, setUser] = useState(null); // ✨ Estado para gerenciar os dados do usuário atual em tempo real
+  const [user, setUser] = useState(null);
   
   const [movieDetails, setMovieDetails] = useState({
     runtime: null, genres: [], cast: [], director: '', writer: '', originalLanguage: '', budget: 0, revenue: 0, status: ''
@@ -31,6 +31,10 @@ export default function MovieDetails() {
   const [editingReplyIndex, setEditingReplyIndex] = useState(null); 
 
   const [allReviews, setAllReviews] = useState([]);
+
+  // Estados para o Modal de Ampliação de Foto
+  const [modalImageVisible, setModalImageVisible] = useState(false);
+  const [selectedImageUri, setSelectedImageUri] = useState(null);
 
   const isAdmin = 
     AuthSession.userEmail?.toLowerCase().includes('admin') || 
@@ -56,9 +60,22 @@ export default function MovieDetails() {
     return 22;
   };
 
+  const abrirFotoExpandida = (imageUri) => {
+    if (imageUri && imageUri !== "NULO" && imageUri !== "undefined" && (imageUri.startsWith('http') || imageUri.startsWith('file') || imageUri.startsWith('content'))) {
+      setSelectedImageUri(imageUri);
+      setModalImageVisible(true);
+    }
+  };
+
   const renderAvatar = (image, avatarColor, avatarIcon, estiloImagem, estiloPlaceholder, tamanhoIcone) => {
-    if (image && image !== "NULO" && image !== "undefined" && (image.startsWith('http') || image.startsWith('file') || image.startsWith('content'))) {
-      return <Image source={{ uri: image }} style={estiloImagem} />;
+    const temFoto = image && image !== "NULO" && image !== "undefined" && (image.startsWith('http') || image.startsWith('file') || image.startsWith('content'));
+
+    if (temFoto) {
+      return (
+        <TouchableOpacity activeOpacity={0.8} onPress={() => abrirFotoExpandida(image)}>
+          <Image source={{ uri: image }} style={estiloImagem} />
+        </TouchableOpacity>
+      );
     }
 
     if (avatarColor || avatarIcon) {
@@ -112,6 +129,7 @@ export default function MovieDetails() {
       const writerObj = creditsData.crew?.find(person => person.job === "Writer" || person.job === "Screenplay");
 
       const topCast = creditsData.cast?.slice(0, 10).map(actor => ({
+        id: actor.id,
         name: actor.name,
         profile_path: actor.profile_path ? `https://image.tmdb.org/t/p/w185${actor.profile_path}` : null
       })) || [];
@@ -137,9 +155,6 @@ export default function MovieDetails() {
 
   async function carregarDadosCompletos() {
     try {
-      // ✨ LIMPADO: O "CREATE TABLE IF NOT EXISTS movie_reviews" foi removido daqui!
-
-      // ✨ BUSCA DINÂMICA: Carrega os dados atualizados do seu perfil localmente
       const usuarioAtual = await db.getFirstAsync(
         "SELECT name, image, avatar_color, avatar_icon FROM users WHERE id = ?;", 
         [AuthSession.userId]
@@ -170,11 +185,11 @@ export default function MovieDetails() {
         `SELECT mr.id, mr.user_id, mr.movie_id, mr.rating, mr.review, 
                 u.name AS autor_nome, u.image AS autor_foto, 
                 u.avatar_color AS autor_cor, u.avatar_icon AS autor_icone
-         FROM movie_reviews mr
-         INNER JOIN users u ON mr.user_id = u.id
-         WHERE mr.movie_id = ? AND (mr.review IS NOT NULL AND mr.review != '')
-         ORDER BY mr.id DESC;`,
-         [id]
+          FROM movie_reviews mr
+          INNER JOIN users u ON mr.user_id = u.id
+          WHERE mr.movie_id = ? AND (mr.review IS NOT NULL AND mr.review != '')
+          ORDER BY mr.id DESC;`,
+          [id]
       );
       setAllReviews(reviewsPublicos);
 
@@ -271,7 +286,7 @@ export default function MovieDetails() {
           const textoFinalAtualizado = review.trim() + novasSubRespostas;
 
           await db.runAsync("UPDATE movie_reviews SET rating = ?, review = ? WHERE id = ?;", [rating, textoFinalAtualizado, editingReviewId]);
-          Alert.alert("Sucesso!", "Seu comentário foi updated.");
+          Alert.alert("Sucesso!", "Seu comentário foi atualizado.");
         }
       } 
       else {
@@ -404,49 +419,82 @@ export default function MovieDetails() {
     }
 
     return (
-      <View style={{ width: '100%' }}>
-        <Text style={globalStyles.commentBaseText}>{textoPrincipal}</Text>
+      <View style={{ width: '100%', marginTop: 8 }}>
+        <Text style={[globalStyles.commentBaseText, { flexWrap: 'wrap', width: '100%' }]}>
+          {textoPrincipal}
+        </Text>
         
         {respostasFinais.length > 0 && (
-          <View style={globalStyles.subRepliesTreeContainer}>
+          <View style={{ width: '100%', marginTop: 10, paddingLeft: 8 }}>
             {respostasFinais.map((resp) => {
               const minhaSubResposta = resp.idDono === AuthSession.userId;
               const podeEditarSub = minhaSubResposta;
               const podeDeletarSub = isAdmin || minhaSubResposta;
 
-              // Renderização condicional dos dados do autor da sub-resposta, priorizando os dados do usuário logado se for o autor
               const fotoExibicao = minhaSubResposta && user ? user.image : resp.foto;
               const corExibicao = minhaSubResposta && user ? user.avatar_color : resp.cor;
               const iconeExibicao = minhaSubResposta && user ? user.avatar_icon : resp.icone;
               const nomeExibicao = minhaSubResposta && user ? user.name : resp.autor;
 
               return (
-                <View key={resp.indiceReal} style={globalStyles.replyCard}>
-                  
-                  {renderAvatar(fotoExibicao, corExibicao, iconeExibicao, globalStyles.replyAvatar, globalStyles.replyAvatarPlaceholder, 13)}
+                <View 
+                  key={resp.indiceReal} 
+                  style={{
+                    backgroundColor: '#161B22',
+                    borderRadius: 8,
+                    padding: 10,
+                    marginTop: 8,
+                    borderLeftWidth: 3,
+                    borderLeftColor: '#1F6FEB',
+                    width: '100%',
+                  }}
+                >
+                  <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 4, width: '100%', marginBottom: 6 }}>
+                    
+                    <TouchableOpacity 
+                      style={{ flexDirection: 'row', alignItems: 'center', flexShrink: 1, marginRight: 6 }}
+                      onPress={() => {
+                        if (resp.idDono) {
+                          router.push(`/user/${resp.idDono}`);
+                        } else {
+                          Alert.alert("Erro", "Usuário não encontrado.");
+                        }
+                      }}
+                    >
+                      {renderAvatar(
+                        fotoExibicao, 
+                        corExibicao, 
+                        iconeExibicao, 
+                        globalStyles.replyAvatar, 
+                        globalStyles.replyAvatarPlaceholder, 
+                        13
+                      )}
 
-                  <View style={globalStyles.replyContentBox}>
-                    <View style={globalStyles.replyHeaderRow}>
-                      <Text style={globalStyles.replyAuthorName} numberOfLines={1}>@{nomeExibicao}</Text>
+                      <Text style={[globalStyles.replyAuthorName, { marginLeft: 6, flexShrink: 1, fontSize: 13 }]} numberOfLines={1}>
+                        @{nomeExibicao}
+                      </Text>
+                    </TouchableOpacity>
+
+                    <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6, flexShrink: 0 }}>
+                      <Text style={{ fontSize: 10, color: '#8B949E' }}>{resp.data}</Text>
                       
-                      <View style={globalStyles.replyMetaControls}>
-                        <Text style={globalStyles.replyDateText}>{resp.data}</Text>
-                        
-                        {podeEditarSub && (
-                          <TouchableOpacity onPress={() => iniciarEdicaoDaResposta(reviewId, resp.indiceReal, resp.msg)} style={globalStyles.replyActionTouch}>
-                            <MaterialCommunityIcons name="pencil" size={13} color="#FFD700" />
-                          </TouchableOpacity>
-                        )}
+                      {podeEditarSub && (
+                        <TouchableOpacity onPress={() => iniciarEdicaoDaResposta(reviewId, resp.indiceReal, resp.msg)} style={{ padding: 2 }}>
+                          <MaterialCommunityIcons name="pencil" size={13} color="#FFD700" />
+                        </TouchableOpacity>
+                      )}
 
-                        {podeDeletarSub && (
-                          <TouchableOpacity onPress={() => handleRemoverSubResposta(reviewId, resp.indiceReal, resp.autor)} style={globalStyles.replyActionTouch}>
-                            <MaterialCommunityIcons name="trash-can" size={13} color="#FF6B6B" />
-                          </TouchableOpacity>
-                        )}
-                      </View>
+                      {podeDeletarSub && (
+                        <TouchableOpacity onPress={() => handleRemoverSubResposta(reviewId, resp.indiceReal, resp.autor)} style={{ padding: 2 }}>
+                          <MaterialCommunityIcons name="trash-can" size={13} color="#FF6B6B" />
+                        </TouchableOpacity>
+                      )}
                     </View>
-                    <Text style={globalStyles.replyBodyText}>{resp.msg}</Text>
                   </View>
+
+                  <Text style={{ color: '#C9D1D9', fontSize: 13, lineHeight: 18, width: '100%', flexWrap: 'wrap' }}>
+                    {resp.msg}
+                  </Text>
 
                 </View>
               );
@@ -469,6 +517,36 @@ export default function MovieDetails() {
     <ScrollView style={{ backgroundColor: Theme.colors.background }} contentContainerStyle={{ paddingBottom: 50 }}>
       
       <Stack.Screen options={{ headerShown: false }} />
+
+      {/* Modal de Foto em Tamanho Cheio */}
+      <Modal
+        visible={modalImageVisible}
+        transparent={true}
+        animationType="fade"
+        onRequestClose={() => setModalImageVisible(false)}
+      >
+        <View style={{
+          flex: 1,
+          backgroundColor: 'rgba(0,0,0,0.9)',
+          justifyContent: 'center',
+          alignItems: 'center'
+        }}>
+          <TouchableOpacity 
+            style={{ position: 'absolute', top: 40, right: 20, zIndex: 10, padding: 10 }}
+            onPress={() => setModalImageVisible(false)}
+          >
+            <MaterialCommunityIcons name="close" size={30} color="#FFFFFF" />
+          </TouchableOpacity>
+
+          {selectedImageUri && (
+            <Image
+              source={{ uri: selectedImageUri }}
+              style={{ width: '90%', height: '70%', borderRadius: 12 }}
+              resizeMode="contain"
+            />
+          )}
+        </View>
+      </Modal>
 
       {/* Header */}
       <View style={globalStyles.detailsHeader}>
@@ -553,8 +631,20 @@ export default function MovieDetails() {
           </View>
         )}
 
-        <Text style={[globalStyles.sectionTitle, { fontSize: 16, marginBottom: 6 }]}>Sinopse</Text>
-        <Text style={[globalStyles.movieOverview, { fontSize: 14, lineHeight: 20, marginBottom: 20 }]}>{movie?.overview || "Sinopse não disponível."}</Text>
+        {/* Sinopse */}
+        <Text style={[globalStyles.sectionTitle, { fontSize: 16, marginBottom: 8 }]}>Sinopse</Text>
+        <View style={{ width: '100%', marginBottom: 20 }}>
+          <Text 
+            style={{ 
+              fontSize: 14, 
+              lineHeight: 22, 
+              color: Theme.colors.textSecondary || '#C9D1D9', 
+              textAlign: 'justify' 
+            }}
+          >
+            {movie?.overview || "Sinopse não disponível."}
+          </Text>
+        </View>
 
         <View style={globalStyles.apiDetailsBox}>
           <Text style={globalStyles.apiDetailsText}>🎬 <Text style={globalStyles.apiDetailsLabel}>Diretor:</Text> {movieDetails.director}</Text>
@@ -571,7 +661,11 @@ export default function MovieDetails() {
             <Text style={[globalStyles.sectionTitle, { fontSize: 16, marginBottom: 12 }]}>Elenco Principal</Text>
             <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={globalStyles.castScrollContainer}>
               {movieDetails.cast.map((actor, aIdx) => (
-                <View key={aIdx} style={globalStyles.castActorCard}>
+                <TouchableOpacity 
+                  key={aIdx} 
+                  style={globalStyles.castActorCard}
+                  onPress={() => router.push(`/actor/${actor.id}`)}
+                >
                   {actor.profile_path ? (
                     <Image source={{ uri: actor.profile_path }} style={globalStyles.castActorImage} />
                   ) : (
@@ -580,7 +674,7 @@ export default function MovieDetails() {
                     </View>
                   )}
                   <Text style={globalStyles.castActorName} numberOfLines={2}>{actor.name}</Text>
-                </View>
+                </TouchableOpacity>
               ))}
             </ScrollView>
           </View>
@@ -648,27 +742,34 @@ export default function MovieDetails() {
             const podeDeletar = isAdmin || eDonoDoComentario;
 
             return (
-              <View key={item.id} style={globalStyles.commentCard}>
+              <View key={item.id} style={[globalStyles.commentCard, { width: '100%', padding: 12 }]}>
                 
-                <View style={globalStyles.commentHeader}>
-                  <View style={globalStyles.commentAuthorBox}>
+                {/* Header do Comentário */}
+                <View style={{ flexDirection: 'column', width: '100%', marginBottom: 8 }}>
+                  
+                  <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', width: '100%' }}>
                     
-                    {renderAvatar(item.autor_foto, item.autor_cor, item.autor_icone, globalStyles.commentAuthorAvatar, globalStyles.commentAuthorPlaceholder, 18)}
-                    
-                    <View style={globalStyles.commentAuthorNameRow}>
-                      <Text style={globalStyles.commentAuthorName} numberOfLines={1}>@{item.autor_nome}</Text>
-                      {eDonoDoComentario && <Text style={globalStyles.commentOwnerBadge}>Você</Text>}
+                    {/* Autor do comentário base */}
+                    <View style={{ flexDirection: 'row', alignItems: 'center', flex: 1, marginRight: 8 }}>
+                      {renderAvatar(item.autor_foto, item.autor_cor, item.autor_icone, globalStyles.commentAuthorAvatar, globalStyles.commentAuthorPlaceholder, 18)}
+                      
+                      <TouchableOpacity 
+                        style={{ marginLeft: 8, flex: 1 }}
+                        onPress={() => router.push(`/user/${item.user_id}`)}
+                      >
+                        <Text style={[globalStyles.commentAuthorName, { flexShrink: 1 }]} numberOfLines={1}>
+                          @{item.autor_nome}
+                        </Text>
+                        {eDonoDoComentario && (
+                          <Text style={[globalStyles.commentOwnerBadge, { alignSelf: 'flex-start', marginTop: 2 }]}>
+                            Você
+                          </Text>
+                        )}
+                      </TouchableOpacity>
                     </View>
-                  </View>
 
-                  <View style={globalStyles.commentControlsRow}>
-                    <View style={globalStyles.commentStarsRow}>
-                      {[1, 2, 3, 4, 5].map((s) => (
-                        <MaterialCommunityIcons key={s} name="star" size={12} color={s <= item.rating ? "#FFD700" : '#30363D'} />
-                      ))}
-                    </View>
-
-                    <View style={globalStyles.commentActionsBox}>
+                    {/* Botões de Ação */}
+                    <View style={{ flexDirection: 'row', alignItems: 'center' }}>
                       <TouchableOpacity onPress={() => iniciarResposta(item)} style={globalStyles.actionIconTouch}>
                         <MaterialCommunityIcons name="comment-outline" size={18} color="#1F6FEB" />
                       </TouchableOpacity>
@@ -685,14 +786,24 @@ export default function MovieDetails() {
                         </TouchableOpacity>
                       )}
                     </View>
+
+                  </View>
+
+                  {/* Estrelas */}
+                  <View style={{ flexDirection: 'row', marginTop: 6 }}>
+                    {[1, 2, 3, 4, 5].map((s) => (
+                      <MaterialCommunityIcons key={s} name="star" size={14} color={s <= item.rating ? "#FFD700" : '#30363D'} style={{ marginRight: 2 }} />
+                    ))}
                   </View>
                 </View>
 
+                {/* Sub-respostas e texto */}
                 {renderizarTextoERespostas(item.id, item.review)}
               </View>
             );
           })
         )}
+
       </View>
     </ScrollView>
   );

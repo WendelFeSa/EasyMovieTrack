@@ -1,6 +1,6 @@
 import axios from 'axios';
 
-//Variável de ambiente nativa para segurança do Token TMDB
+// Variável de ambiente nativa para segurança do Token TMDB
 const tokenTMDB = process.env.EXPO_PUBLIC_TMDB_TOKEN;
 
 const api = axios.create({
@@ -16,7 +16,7 @@ const api = axios.create({
 
 // FUNÇÃO AUXILIAR: Traduz o texto usando a API livre do Google Tradutor
 const traduzirParaPortugues = async (texto) => {
-  if (!texto) return "Pipoca pronta, mas a sinopse deste filme ainda está sendo preparada pela nossa equipe! 🍿✨";
+  if (!texto) return "Pipoca pronta, mas esta informação ainda está sendo preparada pela nossa equipe! 🍿✨";
   
   try {
     const url = `https://translate.googleapis.com/translate_a/single?client=gtx&sl=en&tl=pt&dt=t&q=${encodeURIComponent(texto)}`;
@@ -27,6 +27,55 @@ const traduzirParaPortugues = async (texto) => {
     console.log("Aviso: Limite de tradução atingido ou erro no Google, usando texto original.");
     return texto;
   }
+};
+
+// FUNÇÃO AUXILIAR DA API: Varre a lista aplicando traduções e tratamentos de erros nas sinopses e títulos
+const ajustarDadosFilmes = async (movies) => {
+  if (!Array.isArray(movies)) return [];
+
+  const promessasDeAjuste = movies.map(async (movie) => {
+    let tituloFinal = movie.title;
+    let sinopseFinal = movie.overview;
+
+    // Caso a sinopse em PT-BR venha vazia ou muito curta, faz fallback para EN-US e traduz
+    if (!sinopseFinal || sinopseFinal.trim().length < 5) {
+      try {
+        const fallbackResponse = await api.get(`/movie/${movie.id}`, { params: { language: 'en-US' } });
+        const dadosEmIngles = fallbackResponse.data;
+
+        if (dadosEmIngles.overview && dadosEmIngles.overview.trim().length > 5) {
+          sinopseFinal = await traduzirParaPortugues(dadosEmIngles.overview);
+        } else {
+          sinopseFinal = "Pipoca pronta, mas a sinopse deste filme ainda está sendo preparada pela nossa equipe! 🍿✨";
+        }
+
+        if (dadosEmIngles.title && dadosEmIngles.title !== movie.title) {
+          tituloFinal = await traduzirParaPortugues(dadosEmIngles.title);
+        }
+      } catch (e) {
+        sinopseFinal = "Sinopse indisponível no momento. Que tal dar o play e descobrir a história? 🎬";
+      }
+    }
+
+    // Tratamento para títulos que contêm apenas ideogramas ou caracteres especiais sem tradução
+    const contemLetrasNormais = /[a-zA-Z0-9]/.test(tituloFinal);
+    if (!contemLetrasNormais) {
+      try {
+        const fallbackResponse = await api.get(`/movie/${movie.id}`, { params: { language: 'en-US' } });
+        tituloFinal = await traduzirParaPortugues(fallbackResponse.data.title);
+      } catch (e) {
+        tituloFinal = "Filme Internacional";
+      }
+    }
+
+    return {
+      ...movie,
+      title: tituloFinal,
+      overview: sinopseFinal
+    };
+  });
+
+  return await Promise.all(promessasDeAjuste);
 };
 
 // FUNÇÃO PADRÃO: Busca filmes populares da página inicial
@@ -56,7 +105,7 @@ export const getMoviesByGenreOnline = async (genreId, page = 1) => {
         with_genres: genreId,
         language: 'pt-BR',
         page: page,
-        sort_by: 'popularity.desc', // Traz os mais populares daquele gênero primeiro
+        sort_by: 'popularity.desc',
         include_adult: false
       }
     });
@@ -65,7 +114,6 @@ export const getMoviesByGenreOnline = async (genreId, page = 1) => {
       return [];
     }
 
-    // Reaproveita o tratamento de sinopses e traduções para garantir qualidade mesmo em buscas por gênero
     return await ajustarDadosFilmes(response.data.results);
   } catch (error) {
     console.error("Erro ao buscar filmes por gênero no TMDB:", error.response?.data || error.message);
@@ -88,26 +136,22 @@ export const searchMoviesOnline = async (queryText = "", page = 1) => {
       }
     });
 
-    // Se o servidor não devolver resultados válidos, retorna um array vazio com segurança
     if (!response.data || !response.data.results) {
       return [];
     }
 
     const filmesModificados = await ajustarDadosFilmes(response.data.results);
 
-    // Implementação de ordenação inteligente: Filmes que começam com o termo de busca aparecem primeiro, seguidos por ordem alfabética
     const queryLimpa = termoBusca.toLowerCase();
-    
-    // Filtro para garantir que operamos apenas em dados válidos
     const filmesValidos = filmesModificados.filter(m => m && m.title);
 
     filmesValidos.sort((a, b) => {
       const aComeca = a.title.toLowerCase().startsWith(queryLimpa);
       const bComeca = b.title.toLowerCase().startsWith(queryLimpa);
       
-      if (aComeca && !bComeca) return -1; // 'a' vai para o topo
-      if (!aComeca && bComeca) return 1;  // 'b' vai para o topo
-      return a.title.localeCompare(b.title); // Ordem alfabética em caso de empate
+      if (aComeca && !bComeca) return -1;
+      if (!aComeca && bComeca) return 1;
+      return a.title.localeCompare(b.title);
     });
 
     return filmesValidos;
@@ -123,7 +167,7 @@ export const getTrendingMovies = async (timeWindow = 'day') => {
     const response = await api.get(`/trending/movie/${timeWindow}`, {
       params: { language: 'pt-BR' }
     });
-    return await ajustarDadosFilmes(response.data.results.slice(0, 10)); // Pega os 10 primeiros
+    return await ajustarDadosFilmes(response.data.results.slice(0, 10));
   } catch (error) {
     console.error(`Erro ao buscar tendências (${timeWindow}):`, error.message);
     return [];
@@ -131,17 +175,16 @@ export const getTrendingMovies = async (timeWindow = 'day') => {
 };
 
 // FUNÇÃO: Busca filmes por distribuição (Nos Cinemas ou plataformas)
-// OBS: A API do TMDB tem limitações para disponibilidades específicas, então usei os filtros mais próximos para cada categoria
 export const getMoviesByAvailability = async (type = 'cinema') => {
   try {
-    let endpoint = '/movie/now_playing'; // Padrão: Nos Cinemas
+    let endpoint = '/movie/now_playing';
     let extraParams = {};
 
     if (type === 'streaming') {
       endpoint = '/discover/movie';
-      extraParams = { with_watch_providers: '8|119|337', watch_region: 'BR' }; // Netflix, Prime, Disney+
+      extraParams = { with_watch_providers: '8|119|337', watch_region: 'BR' };
     } else if (type === 'tv') {
-      endpoint = '/movie/upcoming'; // Próximos lançamentos / Grade de TV
+      endpoint = '/movie/upcoming';
     } else if (type === 'alugar') {
       endpoint = '/discover/movie';
       extraParams = { with_watch_monetization_types: 'rent', watch_region: 'BR' };
@@ -162,49 +205,72 @@ export const getMoviesByAvailability = async (type = 'cinema') => {
   }
 };
 
-// FUNÇÃO AUXILIAR DA API: Varre a lista aplicando traduções e tratamentos de erros nas sinopses
-const ajustarDadosFilmes = async (movies) => {
-  const promessasDeAjuste = movies.map(async (movie) => {
-    let tituloFinal = movie.title;
-    let sinopseFinal = movie.overview;
+// Função: Busca os detalhes de um único filme pelo ID usando as regras de tradução existentes
+export const getMovieDetailsOnline = async (movieId) => {
+  try {
+    const response = await api.get(`/movie/${movieId}`, {
+      params: { language: 'pt-BR' }
+    });
+    
+    const [filmeAjustado] = await ajustarDadosFilmes([response.data]);
+    return filmeAjustado;
+  } catch (error) {
+    console.error(`Erro ao buscar detalhes do filme ${movieId}:`, error.message);
+    return null;
+  }
+};
 
-    if (!sinopseFinal || sinopseFinal.trim().length < 5) {
+// ✨ ATUALIZADO: Buscar detalhes do ator (com tradução automática de biografia caso não exista em PT-BR)
+export const getActorDetails = async (personId) => {
+  try {
+    const response = await api.get(`/person/${personId}`, {
+      params: { language: 'pt-BR' }
+    });
+    
+    let atorData = response.data;
+
+    // Se a biografia veio vazia em português, busca em inglês e traduz via Google Translate
+    if (!atorData.biography || atorData.biography.trim().length < 5) {
       try {
-        const fallbackResponse = await api.get(`/movie/${movie.id}`, { params: { language: 'en-US' } });
-        const dadosEmIngles = fallbackResponse.data;
-
-        if (dadosEmIngles.overview && dadosEmIngles.overview.trim().length > 5) {
-          sinopseFinal = await traduzirParaPortugues(dadosEmIngles.overview);
+        const fallbackResponse = await api.get(`/person/${personId}`, {
+          params: { language: 'en-US' }
+        });
+        
+        if (fallbackResponse.data.biography && fallbackResponse.data.biography.trim().length > 5) {
+          atorData.biography = await traduzirParaPortugues(fallbackResponse.data.biography);
         } else {
-          sinopseFinal = "Pipoca pronta, mas a sinopse deste filme ainda está sendo preparada pela nossa equipe! 🍿✨";
-        }
-
-        if (dadosEmIngles.title && dadosEmIngles.title !== movie.title) {
-          tituloFinal = await traduzirParaPortugues(dadosEmIngles.title);
+          atorData.biography = "Biografia indisponível no momento para este artista.";
         }
       } catch (e) {
-        sinopseFinal = "Sinopse indisponível no momento. Que tal dar o play e descobrir a história? 🎬";
+        atorData.biography = "Biografia não informada.";
       }
     }
 
-    const contemLetrasNormais = /[a-zA-Z0-9]/.test(tituloFinal);
-    if (!contemLetrasNormais) {
-      try {
-        const fallbackResponse = await api.get(`/movie/${movie.id}`, { params: { language: 'en-US' } });
-        tituloFinal = await traduzirParaPortugues(fallbackResponse.data.title);
-      } catch (e) {
-        tituloFinal = "Filme Internacional";
-      }
-    }
+    return atorData;
+  } catch (error) {
+    console.error(`Erro ao buscar detalhes do ator ${personId}:`, error.message);
+    return null;
+  }
+};
 
-    return {
-      ...movie,
-      title: tituloFinal,
-      overview: sinopseFinal
-    };
-  });
+// ✨ ATUALIZADO: Buscar a lista de filmes em que o ator atuou (com títulos traduzidos e ordenação)
+export const getActorMovieCredits = async (personId) => {
+  try {
+    const response = await api.get(`/person/${personId}/movie_credits`, {
+      params: { language: 'pt-BR' }
+    });
+    
+    const cast = response.data.cast || [];
+    
+    // Ordena do mais popular para o menos popular
+    const castOrdenado = cast.sort((a, b) => b.popularity - a.popularity);
 
-  return await Promise.all(promessasDeAjuste);
+    // Aplica o tratamento de títulos e sinopses traduzidas na lista do ator
+    return await ajustarDadosFilmes(castOrdenado);
+  } catch (error) {
+    console.error(`Erro ao buscar créditos do ator ${personId}:`, error.message);
+    return [];
+  }
 };
 
 // FUNÇÕES DE BANCO DE DADOS: Salva cache e faz busca local na tabela de filmes
@@ -256,22 +322,6 @@ export const searchMoviesLocal = async (db, queryText = '') => {
   } catch (error) {
     console.error('Erro ao buscar filmes localmente:', error);
     return [];
-  }
-};
-
-// Função: Busca os detalhes de um único filme pelo ID usando as regras de tradução existentes
-export const getMovieDetailsOnline = async (movieId) => {
-  try {
-    const response = await api.get(`/movie/${movieId}`, {
-      params: { language: 'pt-BR' }
-    });
-    
-    // Passei em formato de array para reaproveitar a função 'ajustarDadosFilmes' sem duplicar lógica
-    const [filmeAjustado] = await ajustarDadosFilmes([response.data]);
-    return filmeAjustado;
-  } catch (error) {
-    console.error(`Erro ao buscar detalhes do filme ${movieId}:`, error.message);
-    return null;
   }
 };
 

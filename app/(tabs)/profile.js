@@ -4,7 +4,17 @@ import * as ImagePicker from 'expo-image-picker';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useSQLiteContext } from 'expo-sqlite';
 import { useEffect, useState } from 'react';
-import { Alert, Image, ScrollView, Text, TextInput, TouchableOpacity, View } from 'react-native';
+import {
+  Alert,
+  Image,
+  Modal,
+  Pressable,
+  ScrollView,
+  Text,
+  TextInput,
+  TouchableOpacity,
+  View,
+} from 'react-native';
 import { Theme } from '../../constants/theme';
 import { AuthSession } from '../../src/services/authSession';
 import { globalStyles } from '../../src/styles/globalStyles';
@@ -26,9 +36,11 @@ export default function Profile() {
   const [selectedIcon, setSelectedIcon] = useState('weather-lightning');
   const [userImage, setUserImage] = useState(null);
 
+  // Estado para controlar a visualização da foto em tela cheia
+  const [imageModalVisible, setImageModalVisible] = useState(false);
+
   async function loadUserData() {
     try {
-      // CORRIGIDO: Agora usa AuthSession.userEmail em vez de AuthSession.email
       const emailAlvo = params.userEmail?.trim() || AuthSession.userEmail?.trim();
 
       if (emailAlvo) {
@@ -63,7 +75,7 @@ export default function Profile() {
       mediaTypes: ['images'],
       allowsEditing: true,
       aspect: [1, 1],
-      quality: 0.5,
+      quality: 0.8,
     });
 
     if (!result.canceled) {
@@ -77,7 +89,6 @@ export default function Profile() {
       { 
         text: "Sair", 
         onPress: () => {
-          // Limpa os dados da sessão ao sair
           AuthSession.userId = null;
           AuthSession.userEmail = null;
           AuthSession.role = null;
@@ -121,11 +132,20 @@ export default function Profile() {
     }
   }
 
+  const handleAvatarPress = () => {
+    if (isEditing) {
+      pickImage();
+    } else {
+      setImageModalVisible(true);
+    }
+  };
+
   return (
-    <ScrollView style={{backgroundColor: Theme.colors.background}} contentContainerStyle={{ padding: 20, paddingTop: 60 }}>
+    <ScrollView style={{ backgroundColor: Theme.colors.background }} contentContainerStyle={{ padding: 20, paddingTop: 60 }}>
       <View style={globalStyles.headerCenter}>
         
-        <TouchableOpacity onPress={isEditing ? pickImage : null} activeOpacity={0.8}>
+        {/* Clique no Avatar para editar (quando isEditing) ou ampliar (quando visualizando) */}
+        <TouchableOpacity onPress={handleAvatarPress} activeOpacity={0.8}>
           <View style={[globalStyles.avatarCircle, { backgroundColor: selectedColor, shadowColor: selectedColor }]}>
             {userImage ? (
               <Image source={{ uri: userImage }} style={globalStyles.avatarImage} />
@@ -149,7 +169,7 @@ export default function Profile() {
         {isEditing ? (
           <View style={{ width: '100%' }}>
             <TouchableOpacity onPress={() => setUserImage(null)}>
-               <Text style={{color: Theme.colors.danger, textAlign: 'center', marginBottom: 15, fontSize: 12, fontWeight: 'bold'}}>REMOVER FOTO E USAR AVATAR</Text>
+               <Text style={{ color: Theme.colors.danger, textAlign: 'center', marginBottom: 15, fontSize: 12, fontWeight: 'bold' }}>REMOVER FOTO E USAR AVATAR</Text>
             </TouchableOpacity>
 
             <Text style={globalStyles.labelForm}>COR:</Text>
@@ -182,6 +202,10 @@ export default function Profile() {
             <TouchableOpacity style={globalStyles.buttonPrimary} onPress={handleUpdateProfile}>
               <Text style={globalStyles.buttonText}>SALVAR TUDO</Text>
             </TouchableOpacity>
+
+            <TouchableOpacity style={[globalStyles.outlineBtn, { borderColor: Theme.colors.textSecondary, marginTop: 10 }]} onPress={() => setIsEditing(false)}>
+              <Text style={{ color: Theme.colors.textSecondary, fontWeight: 'bold' }}>CANCELAR EDICÃO</Text>
+            </TouchableOpacity>
           </View>
         ) : (
           <>
@@ -192,7 +216,6 @@ export default function Profile() {
               <Text style={globalStyles.buttonText}>CUSTOMIZAR PERFIL</Text>
             </TouchableOpacity>
 
-            {/* Proteção segura para exibição do Painel do Admin */}
             {user?.role === 'admin' && (
               <TouchableOpacity 
                 style={[globalStyles.outlineBtn, { borderColor: Theme.colors.primary, marginTop: 10 }]} 
@@ -208,6 +231,41 @@ export default function Profile() {
           </>
         )}
       </View>
+
+      {/* MODAL DE AMPLIAÇÃO DA FOTO DE PERFIL */}
+      <Modal 
+        visible={imageModalVisible} 
+        transparent={true} 
+        animationType="fade"
+        onRequestClose={() => setImageModalVisible(false)}
+      >
+        <Pressable 
+          style={{
+            flex: 1, 
+            backgroundColor: 'rgba(0, 0, 0, 0.9)', 
+            justifyContent: 'center', 
+            alignItems: 'center',
+            padding: 20
+          }}
+          onPress={() => setImageModalVisible(false)}
+        >
+          <TouchableOpacity 
+            style={{ position: 'absolute', top: 50, right: 20, zIndex: 10, padding: 10 }}
+            onPress={() => setImageModalVisible(false)}
+          >
+            <MaterialCommunityIcons name="close" size={30} color="white" />
+          </TouchableOpacity>
+
+          <View style={{ width: 280, height: 280, borderRadius: 140, overflow: 'hidden', justifyContent: 'center', alignItems: 'center', backgroundColor: selectedColor }}>
+            {userImage ? (
+              <Image source={{ uri: userImage }} style={{ width: '100%', height: '100%', resizeMode: 'cover' }} />
+            ) : (
+              <MaterialCommunityIcons name={selectedIcon} size={140} color={selectedColor === '#FFFFFF' ? '#000' : 'white'} />
+            )}
+          </View>
+        </Pressable>
+      </Modal>
+
     </ScrollView>
   );
 }
